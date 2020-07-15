@@ -88,14 +88,33 @@ let
             [a = 4, b = 5]
         })
 in
-    Table.CombineMultipleColumns(StartingTable)",
+    Table.CombineMultipleColumns( StartingTable )",
             Result = "Table.FromRecords({
     [#""a & b"" = 1, 2],
     [#""a & b"" = 2, 2],
     [#""a & b"" = 3, 4],
     [#""a & b"" = 4, 5]
 })"
+            ],[
+                Description = "Combine all columns by 2, skipping first 2",
+                Code = "let
+    StartingTable =
+        Table.FromRecords({
+            [a = 1, b = 2, c = ""apple"", d=  ""banana""],
+            [a = 1, b = 2, c = ""cherry"", d=  ""chocolate""],
+            [a = 1, b = 2, c = ""chocolate"", d=  ""banana""],
+            [a = 1, b = 2, c = """", d=  ""banana""]
+        })
+in
+    Table.CombineMultipleColumns( StartingTable, 2 )",
+            Result = "Table.FromRecords({
+    [a = 1, b = 2, #""c & d"" = ""apple, banana""],
+    [a = 1, b = 2, #""c & d"" = ""cherry, chocolate""],
+    [a = 1, b = 2, #""c & d"" = ""chocolate, banana""],
+    [a = 1, b = 2, #""c & d"" = "", banana""]
+})"
             ]}
         ]
 
-in Value.ReplaceType(TableCombineMultipleColumnsFunction, TableCombineMultipleColumnsType)
+in
+    Value.ReplaceType(TableCombineMultipleColumnsFunction, TableCombineMultipleColumnsType)

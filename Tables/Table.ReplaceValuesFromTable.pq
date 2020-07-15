@@ -4,6 +4,7 @@ let
         let
             // Buffer Transformation Table to call it only once
             BufferedTransformationTable = Table.Buffer(transformationTable),
+
             // Step to add error handling for given table & columns
             tryTransformationColumnNames = try
                 let
