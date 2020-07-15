@@ -11,4 +11,4 @@ A collection of functions written in Power Query (M)
 | Function | Description |
 | :--- | ----------- |
 | [Table.ReplaceValuesFromTable](Tables/Table.ReplaceValuesFromTable) | Ever wanted to mass replace values in columns? This is optimised to do exactly that. |
-| [Table.CombineMultipleColumns](Tables/Table.CombineMultipleColumns) | For the pain of excel files without headers. Combine columns by set Size in one step. |
+| [Table.CombineMultipleColumns](Tables/Table.CombineMultipleColumns) | For the pain of excel files with double headers. Combine columns by any setSize in one step. |
