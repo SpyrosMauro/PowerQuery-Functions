@@ -105,7 +105,7 @@ let
                 Documentation.FieldDescription = "When a day stops counting"
             ]),
             optional durationTo as (type text meta[
-                Documentation.FieldCaption = "Duration as",
+                Documentation.FieldCaption = "Duration in",
                 Documentation.FieldDescription = "Transform duration to",
                 Documentation.AllowedValues = {"Seconds", "Minutes", "Hours", "Days", "Weeks", "Months", "Quarters", "Years"}
             ])
@@ -179,4 +179,4 @@ in
         ]
 
 in
-    Value.ReplaceType(DateTimeDiffFunction, DateTimeDiffType)        
+    Value.ReplaceType(DateTimeDiffFunction, DateTimeDiffType)
