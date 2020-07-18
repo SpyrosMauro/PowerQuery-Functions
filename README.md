@@ -13,8 +13,9 @@ A collection of functions written in Power Query (M)
 | [Table.GenerateColumns](Tables/Table.GenerateColumns.pq) | To add multiple columns based on similar functions. If you think you need this, have you thought about just unpivoting and adding one column afterwards? |
 
 
-## Dates & DateTimes
+## Time Intelligence
 | Function | Description |
 | :--- | ----------- |
-| [DateTime.Diff](DateTimes/DateTime.ReplaceValuesFromTable.pq) | DateTime Diff using 'Excluded Dates' list and 'Start Time' / 'End Time'. |
-| [Date.Diff](DateTimes/DateTime.ReplaceValuesFromTable.pq) | Date Diff using 'Excluded Dates' list. |
+| [DateTime.Diff]('Time Intelligence/DateTime.Diff.pq') | DateTime Diff using 'Excluded Dates' list and 'Start Time' / 'End Time'. |
+| [Date.Diff]('Time Intelligence/Date.Diff.pq') | Date Diff using 'Excluded Dates' list. |
+| [Duration.To]('Time Intelligence/Duration.To.pq') | All Duration.TotalXXXX functions in one. |

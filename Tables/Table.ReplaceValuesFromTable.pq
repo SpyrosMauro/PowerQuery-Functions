@@ -1,6 +1,6 @@
 let
     // Function
-    TableReplaceValuesFromTableFunction = (table as table, transformationTable as table, optional columns as any, optional specifyTransformationColumns as list, optional missingField as nullable number) as table =>
+    TableReplaceValuesFromTableFunction = (table as table, transformationTable as table, optional columns as list, optional specifyTransformationColumns as list, optional missingField as nullable number) as table =>
         let
             // Buffer Transformation Table to call it only once
             BufferedTransformationTable = Table.Buffer(transformationTable),
@@ -57,19 +57,19 @@ let
     TableReplaceValuesFromTableType = 
         type function (
             table as (type table meta [
-                Documentation.FieldCaption ="Target Table",
+                Documentation.FieldCaption ="Target table",
                 Documentation.FieldDescription = "The table to make replacements"
                 ]),
             transformationTable as (type table meta [
-                Documentation.FieldCaption ="Transformation Table",
+                Documentation.FieldCaption ="Transformation table",
                 Documentation.FieldDescription = "The lookup table for replacements"
                 ]),
-            optional columns as (type any meta [
+            optional columns as (type {text} meta [
                 Documentation.FieldCaption ="Columns",
                 Documentation.FieldDescription = "The columns in which to replace values"
                 ]),
             optional specifyTransformationColumns as (type {text} meta [
-                Documentation.FieldCaption ="Transformation Columns",
+                Documentation.FieldCaption ="Transformation columns",
                 Documentation.FieldDescription = "Columns to check on Transformation Table. If not specified, Column1 and Column2 are used."
                 ]),
             optional missingField as MissingField.Type
@@ -77,7 +77,7 @@ let
         as table meta
             [Documentation.Name = "Table.ReplaceValuesFromTable",
             Documentation.Description = "Replaces multiple values at once using a lookup table",
-            Documentation.LongDescription = "Replaces multiple values at once using a lookup table.#(lf)If no columns are specified for the Transformation Table, the first column is used a a lookup and the second as a replacement. If no columns are specified in the Target Table then the default is all columns",
+            Documentation.LongDescription = "Replaces multiple values at once using a lookup table.<p>If no columns are specified for the <code>Transformation table</code>, the first column is used a a lookup and the second as a replacement. <p>If no columns are specified in the <code>Target table</code> then the default is <i>all columns</i>.",
             Documentation.Category = "Table",
             Documentation.Author = "Spyros Mavroforos",
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",

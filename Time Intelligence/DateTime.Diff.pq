@@ -1,23 +1,8 @@
 let
     // Function
-    DateTimeDiffFunction = (dateStart as nullable datetime, dateEnd as nullable datetime, optional excludedDays as list, optional timeStart as time, optional timeEnd as time, optional durationTo as text) =>
+    DateTimeDiffFunction = (dateStart as nullable datetime, dateEnd as nullable datetime, optional excludedDays as list, optional timeStart as time, optional timeEnd as time) as nullable duration =>
         let
             // Helper Functions
-            // durationTotal = Fix a Duration.TotalX function dependent on durationTo
-            durationTotal = 
-                let 
-                    d = Text.Lower(durationTo)
-                in
-                    if d = null then (m) => m
-                    else if d = "seconds" then Duration.TotalSeconds
-                    else if d = "minutes" then Duration.TotalMinutes
-                    else if d = "hours" then Duration.TotalHours
-                    else if d = "days" then Duration.TotalDays
-                    else if d = "weeks" then (m) => Value.Divide(Duration.TotalDays(m), 7)
-                    else if d = "months" then (m) => Value.Divide(Duration.TotalDays(m), 30)
-                    else if d = "quarters" then (m) => Value.Divide(Duration.TotalDays(m), 121)
-                    else (m) => Value.Divide(Duration.TotalDays(m), 365),
-
             // dayIn: find relevant times in day
             dayIn = (timeStart, timeEnd) as list =>
                 let
@@ -74,7 +59,7 @@ let
                     NonWorkingDuration = Duration.Days(endDate - startDate) * (#duration(1,0,0,0) - dayDuration(times))
                 in
                     AllDuration - NonWorkingDuration - ExcludedDuration,
-            fixDuration = durationTotal(calcDuration) * direction,
+            fixDuration = calcDuration * direction,
 
             Result = if dateStart = null or dateEnd = null then null else fixDuration
         in
@@ -103,18 +88,13 @@ let
             optional timeEnd as (type time meta[
                 Documentation.FieldCaption = "End time",
                 Documentation.FieldDescription = "When a day stops counting"
-            ]),
-            optional durationTo as (type text meta[
-                Documentation.FieldCaption = "Duration in",
-                Documentation.FieldDescription = "Transform duration to",
-                Documentation.AllowedValues = {"Seconds", "Minutes", "Hours", "Days", "Weeks", "Months", "Quarters", "Years"}
             ])
         )
-        as nullable any meta
+        as nullable duration meta
         [
             Documentation.Name = "DateTime.Diff",
             Documentation.Description = "Finds the difference between two datetimes",
-            Documentation.LongDescription = "Finds the difference between two datetimes. Optional 'Excluded Dates' list. Optional 'Start time' and 'End time'.",
+            Documentation.LongDescription = "Finds the difference between two datetimes. Optional <code>'Excluded Dates'</code> list. Optional <code>'Start time'</code> and <code>'End time'</code>.",
             Documentation.Category = "Duration",
             Documentation.Author = "Spyros Mavroforos",
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",

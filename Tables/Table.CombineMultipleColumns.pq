@@ -42,21 +42,21 @@ let
 
     // Documentation
     TableCombineMultipleColumnsType = 
-        type function(
+        type function (
             table as (type table meta [
-                Documentation.FieldCaption ="Target Table",
+                Documentation.FieldCaption ="Target table",
                 Documentation.FieldDescription = "The target table"
                 ]),
             optional skipStart as (type nullable number meta [
-                Documentation.FieldCaption ="Skip First N",
+                Documentation.FieldCaption ="Skip first N",
                 Documentation.FieldDescription = "Number of columns to skip from start"
                 ]),
             optional skipEnd as (type nullable number meta [
-                Documentation.FieldCaption ="Skip Last N",
+                Documentation.FieldCaption ="Skip last N",
                 Documentation.FieldDescription = "Number of columns to skip from end"
                 ]),
             optional setSize as (type nullable number meta [
-                Documentation.FieldCaption ="Group Size",
+                Documentation.FieldCaption ="Group size",
                 Documentation.FieldDescription = "Number of columns combine together"
                 ]),
             optional delimiter as (type nullable text meta [
@@ -72,7 +72,7 @@ let
         [
             Documentation.Name = "Table.CombineMultipleColumns",
             Documentation.Description = "Combines multiple columns at once using group size",
-            Documentation.LongDescription = "Combines multiple columns at once using an optional group size. Default group size is 2. If there are trailing columns less than Group Size they will be combined in a smaller group.",
+            Documentation.LongDescription = "Combines multiple columns at once using an optional <code>Group size</code>. Default group size is 2. If there are trailing columns less than <code>Group size</code> they will be combined in a smaller group.",
             Documentation.Category = "Table",
             Documentation.Author = "Spyros Mavroforos",
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",

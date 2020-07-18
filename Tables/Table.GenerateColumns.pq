@@ -5,7 +5,8 @@ let
             newNameList = Value.ReplaceType(List.Transform(columns, newName), type {text}),
 
             AddRecordColumn = Table.AddColumn(table, "__New Columns__",
-                (rec) => Record.FromList(
+                (rec) =>
+                Record.FromList(
                     List.Transform(columns, (c) => Function.Invoke(forEach, {
                         Record.Combine({rec,
                             [_ = [Value = Record.Field(rec, c),
@@ -61,7 +62,7 @@ let
         [
             Documentation.Name = "Table.GenerateColumns",
             Documentation.Description = "Generates multiple columns",
-            Documentation.LongDescription = "Generates multiple columns using a name generator and a column generator. Use [_][Value] for current column value and [_][Name] for current column name.",
+            Documentation.LongDescription = "Generates multiple columns using a name generator and a column generator. Use <code>[_][Value]</code> for current column value and <code>[_][Name]</code> for current column name.<p><i>Note: If a column named <code>_</code> already exists in the table it won't work.</i>",
             Documentation.Category = "Table",
             Documentation.Author = "Spyros Mavroforos",
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",

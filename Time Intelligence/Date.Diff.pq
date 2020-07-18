@@ -1,24 +1,8 @@
 let
     // Function
-    DateDiffFunction = (dateStart as nullable date, dateEnd as nullable date, optional excludedDays as list, optional durationTo as text) =>
+    DateDiffFunction = (dateStart as nullable date, dateEnd as nullable date, optional excludedDays as list) as nullable duration =>
         let
             // Helper Functions
-            // durationTotal = Fix a Duration.TotalX function dependent on durationTo
-            durationTotal = 
-                let 
-                    d = Text.Lower(durationTo)
-                in
-                    if d = null then (m) => m
-                    else if d = "seconds" then Duration.TotalSeconds
-                    else if d = "minutes" then Duration.TotalMinutes
-                    else if d = "hours" then Duration.TotalHours
-                    else if d = "days" then Duration.TotalDays
-                    else if d = "weeks" then (m) => Value.Divide(Duration.TotalDays(m), 7)
-                    else if d = "months" then (m) => Value.Divide(Duration.TotalDays(m), 30)
-                    else if d = "quarters" then (m) => Value.Divide(Duration.TotalDays(m), 121)
-                    else (m) => Value.Divide(Duration.TotalDays(m), 365),
-
-
             // findExcludedDuration: Find duration to exclude based on excludedDays
             findExcludedDuration = (dates as list, startDate as date, endDate as date) as duration =>
                 let
@@ -44,7 +28,7 @@ let
                     AllDuration = endDate - startDate
                 in
                     if AllDuration = #duration(0,0,0,0) then AllDuration else AllDuration - ExcludedDuration,
-            fixDuration = durationTotal(calcDuration) * direction,
+            fixDuration = calcDuration * direction,
 
             Result = if dateStart = null or dateEnd = null then null else fixDuration
         in
@@ -65,18 +49,13 @@ let
             optional excludedDays as (type {date} meta[
                 Documentation.FieldCaption = "Excluded Dates",
                 Documentation.FieldDescription = "A list of dates to exclude"
-            ]),
-            optional durationTo as (type text meta[
-                Documentation.FieldCaption = "Duration in",
-                Documentation.FieldDescription = "Transform duration to",
-                Documentation.AllowedValues = {"Seconds", "Minutes", "Hours", "Days", "Weeks", "Months", "Quarters", "Years"}
             ])
         )
-        as nullable any meta
+        as nullable duration meta
         [
             Documentation.Name = "Date.Diff",
             Documentation.Description = "Finds the difference between two dates",
-            Documentation.LongDescription = "Finds the difference between two dates. Optional 'Excluded Dates' list.",
+            Documentation.LongDescription = "Finds the difference between two dates. Optional <code>'Excluded Dates'</code> list.",
             Documentation.Category = "Duration",
             Documentation.Author = "Spyros Mavroforos",
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",
