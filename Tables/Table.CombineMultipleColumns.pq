@@ -45,7 +45,7 @@ let
         type function(
             table as (type table meta [
                 Documentation.FieldCaption ="Target Table",
-                Documentation.FieldDescription = "The table to make replacements"
+                Documentation.FieldDescription = "The target table"
                 ]),
             optional skipStart as (type nullable number meta [
                 Documentation.FieldCaption ="Skip First N",
