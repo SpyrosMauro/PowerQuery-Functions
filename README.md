@@ -16,6 +16,6 @@ A collection of functions written in Power Query (M)
 ## Time Intelligence
 | Function | Description |
 | :--- | ----------- |
-| [DateTime.Diff](Time Intelligence/DateTime.Diff.pq) | DateTime Diff using 'Excluded Dates' list and 'Start Time' / 'End Time'. |
-| [Date.Diff](Time Intelligence/Date.Diff.pq) | Date Diff using 'Excluded Dates' list. |
-| [Duration.To](Time Intelligence/Duration.To.pq) | All Duration.TotalXXXX functions in one. |
+| [DateTime.Diff](Time%20Intelligence/DateTime.Diff.pq) | DateTime Diff using 'Excluded Dates' list and 'Start Time' / 'End Time'. |
+| [Date.Diff](Time%20Intelligence/Date.Diff.pq) | Date Diff using 'Excluded Dates' list. |
+| [Duration.To](Time%20Intelligence/Duration.To.pq) | All Duration.TotalXXXX functions in one. |
