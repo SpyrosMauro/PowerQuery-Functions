@@ -30,5 +30,5 @@ A collection of functions written in Power Query (M)
 ## Misc
 | Function | Description |
 | :--- | ----------- |
-| [Get.TableView](Other/Get.TableView.pq) | Get formatted <code>Table.View</code> function based on <code>Table.Schema</code> or by infering types. **Only primitive types supported.** |
+| [Get.TableView](Other/Get.TableView.pq) | Get formatted <code>Table.View</code> function based on <code>Table.Schema</code> or by infering types.<p>**Only primitive types supported.** |
 | [Types.TableType](Types/Type.TableType.pq) | Get text of non abstract table type. |
