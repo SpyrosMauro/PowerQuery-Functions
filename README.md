@@ -24,7 +24,7 @@ A collection of functions written in Power Query (M)
 ## Model
 | Function | Description |
 | :--- | ----------- |
-| [PowerBI.Current](Model/PowerBI.Current.pq) | Connects to current PBI model. Requires <code>userName</code>.<p> Needs <b>exactly one</b> Power BI Desktop instance running.<p>*Does not work in Power BI Service.*</i>* |
+| [PowerBI.Current](Model/PowerBI.Current.pq) | Connects to current PBI model. Requires <code>userName</code>.<p>Needs <b>exactly one</b> Power BI Desktop instance running.<p>*Does not work in Power BI Service.*</i>* |
 
 
 ## Misc
