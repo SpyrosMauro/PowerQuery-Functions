@@ -28,7 +28,7 @@ let
                 Documentation.FieldCaption = "duration",
                 Documentation.FieldDescription = "duration to transform"
             ]),
-            durationTo as (type text meta[
+            durationTo as (type text meta [
                 Documentation.FieldCaption = "Duration in",
                 Documentation.FieldDescription = "Transform duration to",
                 Documentation.AllowedValues = {"Seconds", "Minutes", "Hours", "Days", "Weeks", "Months", "Quarters", "Years"}

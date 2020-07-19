@@ -1,6 +1,6 @@
 let
     // Function
-    GenerateTableViewFunction = (table as table, tableName as text, optional precision as number, optional rowsToShow) as any =>
+    GetTableViewFunction = (table as table, tableName as text, optional precision as number, optional rowsToShow) as text =>
         let
             // addTabs: make text readable.
             addTabs = (t as text, optional tabsNumber as number) as text => Text.Replace ( t, "#(lf)", "#(lf)" & Text.Repeat("#(tab)", tabsNumber??1 ) ),
@@ -101,7 +101,7 @@ let
 
 
     // Documentation
-    GenerateTableViewType =
+    GetTableViewType =
         type function (
             table as (type table meta [
                 Documentation.FieldCaption = "Target table",
@@ -122,8 +122,8 @@ let
         )
         as text meta
         [
-            Documentation.Name = "Generate.TableView",
-            Documentation.Description = "Generates <code>Table.View</code> to trick model asking for some rows",
+            Documentation.Name = "Get.TableView",
+            Documentation.Description = "Generates <code>Table.View</code> to trick model asking for evaluation",
             Documentation.LongDescription = "Generates <code>Table.View</code> to trick model asking for evaluation. Optional <code>precision</code> and <code>rowsToShow</code>.<p> <b>Skipping:</b> <i>Lists, Tables, Records, Binaries, Functions and Types</i><p><i>Only primitive types supported.</i>",
             Documentation.Category = "Model",
             Documentation.Author = "Spyros Mavroforos",
@@ -139,7 +139,7 @@ let
         [start = #datetime(2020,7,1,16,0,0), diff = #duration(0,8,0,0), list = {3,4}]
     })
 in
-    Generate.TableView ( StartTable , ""StartTable"", 4 )",
+    Get.TableView ( StartTable , ""StartTable"", 4 )",
                 Result = "= Table.View (
 	null,
 	[
@@ -172,7 +172,7 @@ in
         [start = #datetime(2020,7,1,16,0,0), diff = #duration(0,8,0,0), list = {3,4}]
     })
 in
-    Generate.TableView ( StartTable , ""StartTable"")",
+    Get.TableView ( StartTable , ""StartTable"")",
                 Result = "= Table.View (
 	null,
 	[
@@ -201,4 +201,4 @@ in
         ]
 
 in
-    Value.ReplaceType(GenerateTableViewFunction, GenerateTableViewType)
+    Value.ReplaceType(GetTableViewFunction, GetTableViewType)

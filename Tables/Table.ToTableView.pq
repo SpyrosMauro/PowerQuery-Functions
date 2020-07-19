@@ -1,13 +1,13 @@
 let
     // Function
-    ActionApplyTableViewFunction = (table as table, optional rowsToShow) as table =>
+    TableToTableViewFunction = (table as table, optional rowsToShow) as table =>
         let
             // addTabs: make text readable.
             addTabs = (t as text, optional tabsNumber as number) as text => Text.Replace ( t, "#(lf)", "#(lf)" & Text.Repeat("#(tab)", tabsNumber??1 ) ),
 
 
             // Calculations
-            fixTableName = "#""" & "real Fake Tables" & """",
+            fixTableName = "#""" & "Real Fake Tables" & """",
             columnNames = Table.ColumnNames(table),
 
             findType =
@@ -55,15 +55,14 @@ let
                 Table.FirstN = Table.FirstN,
                 Table.RemoveColumns = Table.RemoveColumns,
                 MissingField.Ignore = MissingField.Ignore,
-                #"real Fake Tables" = table
+                #"Real Fake Tables" = table
             ]
         in
-           // Expression.Evaluate(tableView, Record.AddField(#shared,"tbc", table)),
            Expression.Evaluate(tableView, rec),
 
 
     // Documentation
-    ActionApplyTableViewType =
+    TableToTableViewType =
         type function (
             table as (type table meta [
                 Documentation.FieldCaption = "Target table",
@@ -76,18 +75,18 @@ let
         )
         as table meta
         [
-            Documentation.Name = "Action.ApplyTableView",
+            Documentation.Name = "Table.ToTableView",
             Documentation.Description = "Generates <code>Table.View</code> to trick model asking for some rows",
             Documentation.LongDescription = "Executes <code>Table.View</code> to trick model asking for evaluation. Optional <code>rowsToShow</code>.<p>Creates <code>Table.View</code> based on <code>Table.Schema</code> and executes it.<p> <b>Skipping:</b> <i>Lists, Tables, Records, Binaries, Functions and Types</i><p><i>Only primitive types supported.</i>",
-            Documentation.Category = "Model",
+            Documentation.Category = "Table",
             Documentation.Author = "Spyros Mavroforos",
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",
             Documentation.Version = "1",
             Documentation.Examples = {[
                 Description = "For examples of how this code is generated see:",
-                Code = "Function.GenerateTableView",
+                Code = "Get.TableView",
                 Result = "Expression.Evaluate of generated table view." ]}
         ]
 
 in
-    Value.ReplaceType(ActionApplyTableViewFunction, ActionApplyTableViewType)
+    Value.ReplaceType(TableToTableViewFunction, TableToTableViewType)

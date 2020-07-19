@@ -75,7 +75,8 @@ let
             optional missingField as MissingField.Type
             )
         as table meta
-            [Documentation.Name = "Table.ReplaceValuesFromTable",
+        [
+            Documentation.Name = "Table.ReplaceValuesFromTable",
             Documentation.Description = "Replaces multiple values at once using a lookup table",
             Documentation.LongDescription = "Replaces multiple values at once using a lookup table.<p>If no columns are specified for the <code>Transformation table</code>, the first column is used a a lookup and the second as a replacement. <p>If no columns are specified in the <code>Target table</code> then the default is <i>all columns</i>.",
             Documentation.Category = "Table",
@@ -83,8 +84,8 @@ let
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",
             Documentation.Version = "1",
             Documentation.Examples = {[
-                    Description = "Replace values on all columns",
-                    Code = "let
+                Description = "Replace values on all columns",
+                Code = "let
     StartingTable =
         Table.FromRecords({
             [a = 1, b = 2],
@@ -108,10 +109,9 @@ in
             [a = ""C"", b = ""D""],
             [a = ""D"", b = 5]
         })"
-                ],
-                [
-                    Description = "Replace values on column 'a'",
-                    Code = "let
+                ],[
+                Description = "Replace values on column 'a'",
+                Code = "let
     StartingTable =
         Table.FromRecords({
             [a = 1, b = 2],
@@ -135,10 +135,9 @@ in
             [a = ""C"", b = 3],
             [a = ""D"", b = 5]
         })"
-                ],
-                [
-                    Description = "Replace values on column 'b' by using 'Column2' column as lookup and 'Column1' as replacement",
-                    Code = "let
+                ],[
+                Description = "Replace values on column 'b' by using 'Column2' column as lookup and 'Column1' as replacement",
+                Code = "let
     StartingTable =
         Table.FromRecords({
             [a = ""A"", b = ""B""],
@@ -156,13 +155,13 @@ in
         })
 in
     Table.ReplaceValuesFromTable(StartingTable, transformationTable, {""b""}, {""replace"", ""check""}, MissingField.Error)",
-                Result = "Table.FromRecords({
+            Result = "Table.FromRecords({
             [a = ""A"", b = 2],
             [a = ""B"", b = 2],
             [a = ""C"", b = 4],
             [a = ""D"", b = error [Reason = """", Message = ""A replacement cannot be found for the specified value"", Detail = [ValueToReplace = 5]]
         })"
-                ]}
+            ]}
         ]
 
 in

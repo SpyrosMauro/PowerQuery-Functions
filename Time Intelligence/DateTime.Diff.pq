@@ -69,23 +69,23 @@ let
     // Documentation
     DateTimeDiffType =
         type function (
-            dateStart as (type nullable datetime meta[
+            dateStart as (type nullable datetime meta [
                 Documentation.FieldCaption = "Start date",
                 Documentation.FieldDescription = "DateTime Start"
             ]),
-            dateEnd as (type nullable datetime meta[
+            dateEnd as (type nullable datetime meta [
                 Documentation.FieldCaption = "End date",
                 Documentation.FieldDescription = "DateTime End"
             ]),
-            optional excludedDays as (type {date} meta[
+            optional excludedDays as (type {date} meta [
                 Documentation.FieldCaption = "Excluded Dates",
                 Documentation.FieldDescription = "A list of dates to exclude"
             ]),
-            optional timeStart as (type time meta[
+            optional timeStart as (type time meta [
                 Documentation.FieldCaption = "Start time",
                 Documentation.FieldDescription = "When a day starts counting"
             ]),
-            optional timeEnd as (type time meta[
+            optional timeEnd as (type time meta [
                 Documentation.FieldCaption = "End time",
                 Documentation.FieldDescription = "When a day stops counting"
             ])

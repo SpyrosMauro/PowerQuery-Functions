@@ -64,7 +64,7 @@ let
             applySimpleTransformations = Table.TransformColumnTypes(table, applicableTransformations),
 
             applyAllList = List.Transform(List.RemoveItems(allTransformations, applicableTransformations), each {_{0}, fakeFunction(_{1}), _{1}}),
-            applyOthers = Table.TransformColumns(applySimpleTransformations, applyAllList),
+            applyOthers = if applyAllList <> {} then Table.TransformColumns(applySimpleTransformations, applyAllList) else applySimpleTransformations,
 
             Result = if applyAll??true then applyOthers else applySimpleTransformations
         in

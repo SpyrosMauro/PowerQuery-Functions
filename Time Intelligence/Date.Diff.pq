@@ -38,15 +38,15 @@ let
     // Documentation
     DateDiffType =
         type function (
-            dateStart as (type nullable date meta[
+            dateStart as (type nullable date meta [
                 Documentation.FieldCaption = "Start date",
                 Documentation.FieldDescription = "Date Start"
             ]),
-            dateEnd as (type nullable date meta[
+            dateEnd as (type nullable date meta [
                 Documentation.FieldCaption = "End date",
                 Documentation.FieldDescription = "Date End"
             ]),
-            optional excludedDays as (type {date} meta[
+            optional excludedDays as (type {date} meta [
                 Documentation.FieldCaption = "Excluded Dates",
                 Documentation.FieldDescription = "A list of dates to exclude"
             ])
