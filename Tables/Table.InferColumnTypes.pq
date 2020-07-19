@@ -105,7 +105,7 @@ let
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",
             Documentation.Version = "1",
             Documentation.Examples = {[
-                Description = "Table type to text",
+                Description = "Infer table type",
                 Code = "let
     StartTable = Table.FromRecords({
         [start = #datetime(2020,7,1,0,0,0), diff = #duration(0,15,0,0), list = {1}],
@@ -121,7 +121,7 @@ in
 	#""list"" = ( type list )
 ]"
             ],[
-                Description = "Table type to text",
+                Description = "Infer table type",
                 Code = "let
     startTable = #table(
         {""n"", ""fun"", ""rec"", ""tb"", ""l"", ""bin"", ""typ""},

@@ -68,7 +68,7 @@ let
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",
             Documentation.Version = "1",
             Documentation.Examples = {[
-                Description = "Generate columns named ""Start of Month *""",
+                Description = "Generate columns named <code>""Start of Month *""</code>",
                 Code = "let
     StartingTable =
         Table.FromRecords({

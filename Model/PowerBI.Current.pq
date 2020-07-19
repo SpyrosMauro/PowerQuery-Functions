@@ -33,7 +33,7 @@ let
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",
             Documentation.Version = "1",
             Documentation.Examples = {[
-                Description = "Connect to current model, Windows user: <code>""MyUserName""</code>",
+                Description = "Connect to current model, Windows user: <code>MyUserName</code>",
                 Code = "PowerBI.Current(""MyUserName"")",
                 Result = ""
             ]}

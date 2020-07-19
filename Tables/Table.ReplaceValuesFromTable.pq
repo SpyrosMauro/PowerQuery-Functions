@@ -110,7 +110,7 @@ in
             [a = ""D"", b = 5]
         })"
                 ],[
-                Description = "Replace values on column 'a'",
+                Description = "Replace values on column <code>a</code>",
                 Code = "let
     StartingTable =
         Table.FromRecords({
@@ -136,7 +136,7 @@ in
             [a = ""D"", b = 5]
         })"
                 ],[
-                Description = "Replace values on column 'b' by using 'Column2' column as lookup and 'Column1' as replacement",
+                Description = "Replace values on column <code>b</code> by using <code>Column2</code> column as lookup and <code>Column1</code> as replacement",
                 Code = "let
     StartingTable =
         Table.FromRecords({

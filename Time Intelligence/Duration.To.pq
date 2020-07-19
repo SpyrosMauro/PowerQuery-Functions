@@ -65,7 +65,7 @@ let
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",
             Documentation.Version = "1",
             Documentation.Examples = {[
-                Description = "Duration to months",
+                Description = "Duration to <code>months</code>",
                 Code = "Duration.To(#duration(15,0,0,0), ""Months"")",
                 Result = "0.5"
                 ]}
