@@ -12,7 +12,7 @@ A collection of functions written in Power Query (M)
 | [Table.GenerateColumns](Tables/Table.GenerateColumns.pq) | To add multiple columns based on similar functions. If you think you need this, have you thought about just unpivoting and adding one column afterwards? |
 | [Table.InferColumnTypes](Tables/Table.InferColumnTypes.pq) | Infer column types. **Only primitive types supported.** |
 | [Table.ReplaceValuesFromTable](Tables/Table.ReplaceValuesFromTable.pq) | Optimised mass replace values in columns. |
-| [Table.ToTableView](Tables/Table.ToTableView.pq) | Automatically apply a <code>Table.View</code> function based on <code>Table.Schema</code>. |
+| [Table.ToTableView](Tables/Table.ToTableView.pq) | Automatically apply a <code>Table.View</code> function based on <code>Table.Schema</code>. **Only primitive types supported.** |
 
 ## Time Intelligence
 | Function | Description |
