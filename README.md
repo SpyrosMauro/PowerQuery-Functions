@@ -10,7 +10,7 @@ A collection of functions written in Power Query (M)
 | :--- | ----------- |
 | [Table.CombineMultipleColumns](Tables/Table.CombineMultipleColumns.pq) | For double headers. Combine columns by any <code>setSize</code> in one step. |
 | [Table.GenerateColumns](Tables/Table.GenerateColumns.pq) | To add multiple columns based on similar functions.<p>*Have you thought about just unpivoting and adding one column afterwards?* |
-| [Table.InferColumnTypes](Tables/Table.InferColumnTypes.pq) | Infer column types.<p>**Only primitive types supported.** |
+| [Table.InferColumnTypes](Tables/Table.InferColumnTypes.pq) | Infer column types.<p>*Only primitive types supported.* |
 | [Table.ReplaceValuesFromTable](Tables/Table.ReplaceValuesFromTable.pq) | Optimised mass replace values in columns. |
 | [Table.ToTableView](Tables/Table.ToTableView.pq) | Automatically apply a <code>Table.View</code> function based on <code>Table.Schema</code>.<p>*Only primitive types supported.* |
 
@@ -24,7 +24,7 @@ A collection of functions written in Power Query (M)
 ## Model
 | Function | Description |
 | :--- | ----------- |
-| [PowerBI.Current](Model/PowerBI.Current.pq) | Connects to current PBI model. Requires <code>userName</code>.<p> Needs <b>exactly one</b> Power BI Desktop instance running.<p><i>Does not work in Power BI Service.</i> |
+| [PowerBI.Current](Model/PowerBI.Current.pq) | Connects to current PBI model. Requires <code>userName</code>.<p> Needs <b>exactly one</b> Power BI Desktop instance running.<p>*Does not work in Power BI Service.*</i>* |
 
 
 ## Misc
