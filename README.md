@@ -21,6 +21,12 @@ A collection of functions written in Power Query (M)
 | [Date.Diff](Time%20Intelligence/Date.Diff.pq) | Date Diff using <code>'Excluded Dates'</code> list. |
 | [Duration.To](Time%20Intelligence/Duration.To.pq) | All Duration.Total**xxxx** functions in one. |
 
+## Model
+| Function | Description |
+| :--- | ----------- |
+| [PowerBI.Current](Model/PowerBI.Current.pq) | Connects to current PBI model. Requires <code>userName</code>.<p> Needs <b>exactly one</b> Power BI Desktop instance running.<p><i>Does not work in Power BI Service.</i> |
+
+
 ## Misc
 | Function | Description |
 | :--- | ----------- |
