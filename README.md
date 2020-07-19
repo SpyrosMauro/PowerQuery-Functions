@@ -8,18 +8,18 @@ A collection of functions written in Power Query (M)
 ## Table Manipulation
 | Function | Description |
 | :--- | ----------- |
-| [Table.CombineMultipleColumns](Tables/Table.CombineMultipleColumns.pq) | For the pain of excel files with double headers. Combine columns by any <code>setSize</code> in one step. |
-| [Table.GenerateColumns](Tables/Table.GenerateColumns.pq) | To add multiple columns based on similar functions. *Have you thought about just unpivoting and adding one column afterwards?* |
-| [Table.InferColumnTypes](Tables/Table.InferColumnTypes.pq) | Infer column types. **Only primitive types supported.** |
+| [Table.CombineMultipleColumns](Tables/Table.CombineMultipleColumns.pq) | For double headers. Combine columns by any <code>setSize</code> in one step. |
+| [Table.GenerateColumns](Tables/Table.GenerateColumns.pq) | To add multiple columns based on similar functions.<p>*Have you thought about just unpivoting and adding one column afterwards?* |
+| [Table.InferColumnTypes](Tables/Table.InferColumnTypes.pq) | Infer column types.<p>**Only primitive types supported.** |
 | [Table.ReplaceValuesFromTable](Tables/Table.ReplaceValuesFromTable.pq) | Optimised mass replace values in columns. |
-| [Table.ToTableView](Tables/Table.ToTableView.pq) | Automatically apply a <code>Table.View</code> function based on <code>Table.Schema</code>. **Only primitive types supported.** |
+| [Table.ToTableView](Tables/Table.ToTableView.pq) | Automatically apply a <code>Table.View</code> function based on <code>Table.Schema</code>.<p>**Only primitive types supported.** |
 
 ## Time Intelligence
 | Function | Description |
 | :--- | ----------- |
-| [DateTime.Diff](Time%20Intelligence/DateTime.Diff.pq) | DateTime Diff using <code>'Excluded Dates'</code> list and <code>'Start Time'</code> / <code>'End Time'</code>. |
-| [Date.Diff](Time%20Intelligence/Date.Diff.pq) | Date Diff using <code>'Excluded Dates'</code> list. |
-| [Duration.To](Time%20Intelligence/Duration.To.pq) | All Duration.Total**xxxx** functions in one. |
+| [DateTime.Diff](Time%20Intelligence/DateTime.Diff.pq) | DateTime Diff using <code>Excluded Dates</code> list and <code>Start Time</code> / <code>'End Time'</code>. |
+| [Date.Diff](Time%20Intelligence/Date.Diff.pq) | Date Diff using <code>Excluded Dates</code> list. |
+| [Duration.To](Time%20Intelligence/Duration.To.pq) | All Duration.Total*xxxx* functions in one. |
 
 ## Model
 | Function | Description |
