@@ -1,6 +1,6 @@
 let
     // Function
-    TableToTableViewFunction = (table as table, optional rowsToShow, optional primitive as logical) as table =>
+    TableToTableViewFunction = (table as table, optional rowsToShow, optional primitive as logical, optional useOptimise as logical) as table =>
         let
             // addTabs: make text readable.
             addTabs = (t as text, optional tabsNumber as number) as text => Text.Replace ( t, "#(lf)", "#(lf)" & Text.Repeat("#(tab)", tabsNumber??1 ) ),
@@ -8,7 +8,7 @@ let
             // Not allowed types
             typeList = 
                     if primitive??false then { "binary", "function", "list", "record", "table", "type" }
-                    else { "Type.Binary", "Type.Function", "Type.List", "Type.Record", "Type.Table", "Type.Type" },
+                    else { "Binary.Type", "Function.Type", "List.Type", "Record.Type", "Table.Type", "Type.Type" },
             excludeTypes = (t as text) as logical => List.AllTrue(List.Transform(typeList, each t <> _)),
 
             typeToText = 
@@ -30,9 +30,12 @@ let
             removeColumns = List.Count(columnsToRemove) > 0,
 
             mainTableCall =
-                if removeColumns
-                    then "Table.RemoveColumns ( "& fixTableName & ", { " & Text.Combine(List.Transform(columnsToRemove, each """"&_&""""), ", ") & " } , MissingField.Ignore )"
-                else fixTableName,
+                let tbCall = 
+                    if removeColumns
+                        then "Table.RemoveColumns ( "& fixTableName & ", { " & Text.Combine(List.Transform(columnsToRemove, each """"&_&""""), ", ") & " } , MissingField.Ignore )"
+                    else fixTableName
+                in
+                    if useOptimise??false then "Value.Optimize ( " & tbCall & " )" else tbCall,
 
             tableType =
                     "type table [#(lf)#(tab)"
@@ -89,6 +92,10 @@ let
             optional primitive as (type logical meta [
                 Documentation.FieldCaption = "primitive",
                 Documentation.FieldDescription = "Only primitive types"
+                ]),
+            optional useOptimise as (type logical meta [
+                Documentation.FieldCaption = "useOptimise",
+                Documentation.FieldDescription = "Use Value.Optimize"
                 ])
         )
         as table meta

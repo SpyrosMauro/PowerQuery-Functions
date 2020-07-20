@@ -1,6 +1,6 @@
 let
     // Function
-    GetTableViewFunction = (table as table, tableName as text, optional precision as number, optional rowsToShow, optional primitive as logical) as text =>
+    GetTableViewFunction = (table as table, tableName as text, optional precision as number, optional rowsToShow, optional primitive as logical, optional useOptimise as logical) as text =>
         let
             // addTabs: make text readable.
             addTabs = (t as text, optional tabsNumber as number) as text => Text.Replace ( t, "#(lf)", "#(lf)" & Text.Repeat("#(tab)", tabsNumber??1 ) ),
@@ -45,7 +45,7 @@ let
                 [
                     Text =
                         if primitive??false then { "binary", "function", "list", "record", "table", "type" }
-                        else { "Type.Binary", "Type.Function", "Type.List", "Type.Record", "Type.Table", "Type.Type" },
+                    else { "Binary.Type", "Function.Type", "List.Type", "Record.Type", "Table.Type", "Type.Type" },
                     Type = {type binary, type function, type list, type record, type table, type type, type [...]}
                 ],
             excludeTypes = (t as any, textOrType as text) as logical =>
@@ -93,9 +93,12 @@ let
             removeColumns = List.Count(columnsToRemove) > 0,
 
             mainTableCall =
-                if removeColumns
-                    then "Table.RemoveColumns ( "& fixTableName & ", { " & Text.Combine(List.Transform(columnsToRemove, each """"&_&""""), ", ") & " } , MissingField.Ignore )"
-                else fixTableName,
+                let tbCall = 
+                    if removeColumns
+                        then "Table.RemoveColumns ( "& fixTableName & ", { " & Text.Combine(List.Transform(columnsToRemove, each """"&_&""""), ", ") & " } , MissingField.Ignore )"
+                    else fixTableName
+                in
+                    if useOptimise??false then "Value.Optimize ( " & tbCall & " )" else tbCall,
 
             tableType =
                 "type table [#(lf)#(tab)"
@@ -148,6 +151,10 @@ let
             optional primitive as (type logical meta [
                 Documentation.FieldCaption = "primitive",
                 Documentation.FieldDescription = "Only primitive types"
+                ]),
+            optional useOptimise as (type logical meta [
+                Documentation.FieldCaption = "useOptimise",
+                Documentation.FieldDescription = "Use Value.Optimize"
                 ])
         )
         as text meta
