@@ -1,20 +1,30 @@
 let
     // Function
-    TableToTableViewFunction = (table as table, optional rowsToShow) as table =>
+    TableToTableViewFunction = (table as table, optional rowsToShow, optional primitive as logical) as table =>
         let
             // addTabs: make text readable.
             addTabs = (t as text, optional tabsNumber as number) as text => Text.Replace ( t, "#(lf)", "#(lf)" & Text.Repeat("#(tab)", tabsNumber??1 ) ),
 
+            // Not allowed types
+            typeList = 
+                    if primitive??false then { "binary", "function", "list", "record", "table", "type" }
+                    else { "Type.Binary", "Type.Function", "Type.List", "Type.Record", "Type.Table", "Type.Type" },
+            excludeTypes = (t as text) as logical => List.AllTrue(List.Transform(typeList, each t <> _)),
+
+            typeToText = 
+                if primitive??false then (x as list) as text => "#""" & x{0} &"""" & " = ( type " & x{1} & " )"
+                else (x as list) as text => "#""" & x{0} &"""" & " = " & x{1},
+
+            // Schema columns
+            schemaColumns = if primitive??false then {"Name", "Kind"} else {"Name", "TypeName"},
 
             // Calculations
-            fixTableName = "#""" & "Real Fake Tables" & """",
-            columnNames = Table.ColumnNames(table),
+            fixTableName = "#""" & "" & """",
 
-            findType =
-                Table.SelectRows(
-                    Table.Schema(table)[[Name], [Kind]],
-                    each [Kind] <> "record" and [Kind] <> "table" and [Kind] <> "function" and [Kind] <> "binary" and [Kind] <> "list" and [Kind] <> "type"
-                ),
+            schema = Table.SelectColumns(Table.Schema(table), schemaColumns),
+            columnNames = schema[Name],
+
+            findType = Table.SelectRows( schema, each excludeTypes( Record.Field(_, schemaColumns{1}) ) ),
 
             columnsToRemove = List.RemoveItems(columnNames, findType[Name]),
             removeColumns = List.Count(columnsToRemove) > 0,
@@ -25,9 +35,9 @@ let
                 else fixTableName,
 
             tableType =
-                "type table [#(lf)#(tab)"
-                & Text.Combine(Table.ToList(findType, (x) => "#""" & x{0} &"""" & " = ( type " & x{1} & " )" ), ",#(lf)#(tab)")
-                & "#(lf)]",
+                    "type table [#(lf)#(tab)"
+                    & Text.Combine( Table.ToList( findType, typeToText ), ",#(lf)#(tab)" )
+                    & "#(lf)]",
             
             getType = "GetType = () =>#(lf)#(tab)" & addTabs(tableType),
 
@@ -50,13 +60,17 @@ let
                 & ",#(lf)#(tab)#(tab)" & addTabs(getRows, 2)
                 & ",#(lf)#(tab)#(tab)" & addTabs(onTake, 2) & "#(lf)#(tab)]" & "#(lf))",
 
-            rec = [
-                Table.View = Table.View,
-                Table.FirstN = Table.FirstN,
-                Table.RemoveColumns = Table.RemoveColumns,
-                MissingField.Ignore = MissingField.Ignore,
-                #"Real Fake Tables" = table
-            ]
+            rec = 
+            if primitive??false then
+                [
+                    Table.View = Table.View,
+                    Table.FirstN = Table.FirstN,
+                    Table.RemoveColumns = Table.RemoveColumns,
+                    MissingField.Ignore = MissingField.Ignore,
+                    #"" = table
+                ]
+            else    
+                Record.AddField(#shared, "", table)
         in
            Expression.Evaluate(tableView, rec),
 
@@ -71,13 +85,17 @@ let
             optional rowsToShow as (type number meta [
                 Documentation.FieldCaption = "rowsToShow",
                 Documentation.FieldDescription = "Show first n rows when asking for 1000"
+                ]),
+            optional primitive as (type logical meta [
+                Documentation.FieldCaption = "primitive",
+                Documentation.FieldDescription = "Only primitive types"
                 ])
         )
         as table meta
         [
             Documentation.Name = "Table.ToTableView",
-            Documentation.Description = "Generates <code>Table.View</code> to trick model asking for some rows",
-            Documentation.LongDescription = "Executes <code>Table.View</code> to trick model asking for evaluation. Optional <code>rowsToShow</code>.<p>Creates <code>Table.View</code> based on <code>Table.Schema</code> and executes it.<p> <b>Skipping:</b> <i>Lists, Tables, Records, Binaries, Functions and Types</i><p><i>Only primitive types supported.</i>",
+            Documentation.Description = "Generates <code>Table.View</code> to trick model asking for evaluation",
+            Documentation.LongDescription = "Executes <code>Table.View</code> to trick model asking for evaluation.<p>Creates <code>Table.View</code> based on <code>Table.Schema</code> and executes it.<p> <b>Skipping:</b> <i>Lists, Tables, Records, Binaries, Functions and Types</i>",
             Documentation.Category = "Table",
             Documentation.Author = "Spyros Mavroforos",
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",

@@ -1,21 +1,24 @@
 let
     // Function
-    TableInferColumnTypesFunction = (table as table, optional columns as list, optional precision as number, optional noNull as logical, optional applyAll as logical) as table =>
+    TableInferColumnTypesFunction = (table as table, optional columns as list, optional precision as number, optional applyOnlyNormalTypes as logical, optional tableName as text) as any =>
         let
             // Helper Functions
             // typeFinder: finds the main type of a list
             typeFinder = (x as list, optional noNull as logical, optional crazyMode as logical) =>
-                    let
-                        startingList = if noNull??true then List.Select(x, each not Type.Is(_, type null)) else x,
-                        listMode = List.Mode(startingList),
-                        listDistinct = List.Distinct(startingList),
-                        countDistinct = List.Count(listDistinct)
-                    in
+                let
+                    startingList = if noNull??true then List.Select(x, each not Type.Is(_, type null)) else x,
+                    listMode = List.Mode(startingList),
+                    listDistinct = List.Distinct(startingList),
+                    countDistinct = List.Count(listDistinct)
+                in
+                if countDistinct = 0 then type any
+                else if countDistinct = 1 then listDistinct{0}
+                else
                     // Three extra steps here because type {number} != type {text}
-                    if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type [...]))) then type [...]
-                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type table))) then type table
-                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type list))) then type list
-                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type function))) then type function
+                    if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type [...]))) then type nullable [...]
+                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type table))) then type nullable table
+                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type list))) then type nullable list
+                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type function))) then type nullable function
                     else if crazyMode??false then listMode
                     else if countDistinct > 3 then type any
                     else if countDistinct > 2 then 
@@ -25,31 +28,40 @@ let
                         in
                             if countNew = 2 and List.Contains(listDistinct, type text) then type text
                             else type any
-                    else if countDistinct > 1 then
+                    else
                         if List.Contains(listDistinct, type any)
                             then List.Select(listDistinct, each _ <> type any){0}
                         else if List.Contains(listDistinct, type text) then type text
-                        else type any
-                    else if countDistinct = 1 then listDistinct{0}
-                    else type any,
+                        else type any,
 
-            // fakeFunction: takes a type and makes a function that returns this type, to be used in case of applyAll
+            // replaceWithType: custom replacer
+            replaceWithType = (x,y,z) => let typ = Value.Type(x) in if Type.Is(typ, type number) then if (Number.Mod(x, 1)??0) = 0 then Int64.Type else type number else typ,
+
+            // typeToText
+            typeToText = (typ as type, optional prim as logical) => let schema = Type.TableSchema(type table [a = typ]){0} in if prim??false then schema[Kind] else schema[TypeName],
+
+            // Not allowed types
+            typeList = { type null, type function, type list, type record, type table, type type },
+            excludeTypes = (t as any) as logical => List.AllTrue(List.Transform(typeList, each not Type.Is(t, _))),
+
+            // fakeFunction: takes a type and makes a function that returns this type, to be used for non appliable types
             // when Table.TransformColumnTypes is able to ascribe these 6 types then it will be redundant
             fakeFunction = (Type as type) as function =>
                 if Type.Is(Type, type null) then (x) as null => null
-                else if Type.Is(Type, type function) then (x) as function => x
-                else if Type.Is(Type, type record) then (x) as record => x
-                else if Type.Is(Type, type table) then (x) as table => x
-                else if Type.Is(Type, type list) then (x) as list => x
-                else if Type.Is(Type, type type) then (x) as type => x
+                else if Type.Is(Type, type function) then (x) as nullable function => x
+                else if Type.Is(Type, type list) then (x) as nullable list => x
+                else if Type.Is(Type, type record) then (x) as nullable record => x
+                else if Type.Is(Type, type table) then (x) as nullable table => x
+                else if Type.Is(Type, type type) then (x) as nullable type => x
                 else (x) => x,
 
 
             // Get types
-            columnNames = columns??Table.ColumnNames(table),
             rowsToGet = List.Min({Table.RowCount(table), precision??500, 1000}),
+            firstN = Table.FirstN((if columns = null then table else Table.SelectColumns(table, columns)), rowsToGet),
+            columnNames = columns??Table.ColumnNames(firstN),
 
-            tableValuesToType = Table.ReplaceValue(Table.FirstN((if columns = null then table else Table.SelectColumns(table, columnNames)), rowsToGet), null, null, (x,y,z) => Value.Type(x), columnNames),
+            tableValuesToType = Table.ReplaceValue(firstN, null, null, replaceWithType, columnNames),
             FindBestType = Table.CombineColumns(
                 Table.Transpose(tableValuesToType),
                 List.Transform({1..rowsToGet}, each "Column"&Text.From(_)),
@@ -60,13 +72,27 @@ let
             // Apply transformations
             allTransformations = List.Zip({columnNames, FindBestType[Types]}),
             applicableTransformations = List.Select(allTransformations,
-                each not ( Type.Is(_{1}, type null) or Type.Is(_{1}, type function) or Type.Is(_{1}, type record) or Type.Is(_{1}, type table) or Type.Is(_{1}, type list) or Type.Is(_{1}, type type) )),
-            applySimpleTransformations = Table.TransformColumnTypes(table, applicableTransformations),
-
+                each excludeTypes( _{1} )),
+            applySimpleTransformations = if applicableTransformations <> {} then Table.TransformColumnTypes(table, applicableTransformations) else table,
+            
             applyAllList = List.Transform(List.RemoveItems(allTransformations, applicableTransformations), each {_{0}, fakeFunction(_{1}), _{1}}),
             applyOthers = if applyAllList <> {} then Table.TransformColumns(applySimpleTransformations, applyAllList) else applySimpleTransformations,
 
-            Result = if applyAll??true then applyOthers else applySimpleTransformations
+            textCode = let
+                normalTypes = "Table.TransformColumnTypes( " & Expression.Identifier(tableName) & ", { "
+                    & Text.Combine( List.Transform( applicableTransformations, each "{ """ & _{0} & """, " & typeToText(_{1}) & " }" ), ", " )
+                    & " } )",
+                abnormalTypes = Text.Combine( List.Transform( applyAllList, each  "{ """ & _{0} & """, (x) as nullable " & typeToText(_{2}, true) & " => x , type nullable " & typeToText(_{2}, true) & " }" ), ", " )
+                    & " } )"
+                in if applicableTransformations <> {} and applyAllList <> {} then
+                        "let#(lf)#(tab)" & "normalTypes = " & normalTypes
+                        & ",#(lf)#(tab)abnormalTypes = Table.TransformColumns( normalTypes, { " & abnormalTypes
+                        & "#(lf)in#(lf)#(tab)abnormalTypes"
+                    else if applicableTransformations <> {} then normalTypes
+                    else if applyAllList <> {} then  "Table.TransformColumns( "& Expression.Identifier(tableName) &", { " & abnormalTypes
+                    else null,
+
+            Result = if tableName <> null then textCode else if applyOnlyNormalTypes??false then applySimpleTransformations else applyOthers
         in
             Result,
 
@@ -86,20 +112,20 @@ let
                 Documentation.FieldCaption = "precision",
                 Documentation.FieldDescription = "First <code>n</code> rows to check for best type match. Default: <code>500<c/ode>."
                 ]),
-            optional noNull as (type logical meta [
-                Documentation.FieldCaption = "noNull",
-                Documentation.FieldDescription = "Switch to type null usage. If true (default) then <code>type null = type any</code>."
+            optional applyOnlyNormalTypes as (type logical meta [
+                Documentation.FieldCaption = "applyOnlyNormalTypes",
+                Documentation.FieldDescription = "Switch to not do extra replacements for special types (e.g. type type). Default: <code>false</code>."
             ]),
-            optional applyAll as (type logical meta [
-                Documentation.FieldCaption = "applyAll",
-                Documentation.FieldDescription = "Switch to apply extra replacements for special types (e.g. type type). Default: <code>true</code>."
+            optional tableName as (type text meta [
+                Documentation.FieldCaption = "tableName",
+                Documentation.FieldDescription = "Give a table name in case of text return."
             ])
         )
-        as table meta
+        as any meta
         [
             Documentation.Name = "Table.InferColumnTypes",
             Documentation.Description = "Infers column types",
-            Documentation.LongDescription = "Infers column types. Optional <code>precision</code>.<p><i>Only primitive types supported.</i>",
+            Documentation.LongDescription = "Infers column types. Optional <code>precision</code>.<p>Supply a <code>tableName</code> to get back code as text.",
             Documentation.Category = "Table",
             Documentation.Author = "Spyros Mavroforos",
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",
@@ -116,28 +142,42 @@ let
 in
     Table.InferColumnTypes ( StartTable )",
                 Result = "type table [
-	#""start"" = ( type datetime ),
-	#""diff"" = ( type duration ),
-	#""list"" = ( type list )
+	#""start"" = DateTime.Type,
+	#""diff"" = Duration.Type,
+	#""list"" = List.Type
 ]"
             ],[
                 Description = "Infer table type",
                 Code = "let
     startTable = #table(
         {""n"", ""fun"", ""rec"", ""tb"", ""l"", ""bin"", ""typ""},
-        {{1, (x) => x, [a = 1], #table({""a""}, {{1}}), {1..3}, #binary(""), type text}}
+        {{1, (x) => x, [a = 1], #table({""a""}, {{1}}), {1..3}, #binary(""""), type text}}
         )
 in
     Table.InferColumnTypes ( StartTable )",
                 Result = "type table [
-	#""n"" = ( type number ),
-	#""fun"" = ( type function ),
-	#""rec"" = ( type record ),
-	#""tb"" = ( type table ),
-	#""l"" = ( type list ),
-	#""bin"" = ( type binary ),
-	#""typ"" = ( type type )
+	#""n"" = Int64.Type,
+	#""fun"" = Function.Type,
+	#""rec"" = Record.Type,
+	#""tb"" = Table.Type,
+	#""l"" = List.Type,
+	#""bin"" = Binary.Type,
+	#""typ"" = Type.Type
 ]"
+            ],[
+                Description = "get M code",
+                Code = "let
+    #""Start Table"" = #table(
+        {""n"", ""fun"", ""rec"", ""tb"", ""l"", ""bin"", ""typ""},
+        {{1, (x) => x, [a = 1], #table({""a""}, {{1}}), {1..3}, #binary(""""), type text}}
+        )
+in
+    Table.InferColumnTypes ( #""Start Table"" , null, null, null, ""Start Table"")",
+                Result = """let
+	normalTypes = Table.TransformColumnTypes( #""Start Table"", { { ""n"", Int64.Type }, { ""bin"", Binary.Type } } ),
+	abnormalTypes = Table.TransformColumns( normalTypes, { { ""fun"", (x) as nullable function => x , type nullable function }, { ""rec"", (x) as nullable record => x , type nullable record }, { ""tb"", (x) as nullable table => x , type nullable table }, { ""l"", (x) as nullable list => x , type nullable list }, { ""typ"", (x) as nullable type => x , type nullable type }, { ""tb typ"", (x) as nullable type => x , type nullable type } } )
+in
+	abnormalTypes"""
             ]}
         ]
 

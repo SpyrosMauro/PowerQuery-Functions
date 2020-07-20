@@ -1,18 +1,21 @@
 let
     // Function
-    GetTableViewFunction = (table as table, tableName as text, optional precision as number, optional rowsToShow) as text =>
+    GetTableViewFunction = (table as table, tableName as text, optional precision as number, optional rowsToShow, optional primitive as logical) as text =>
         let
             // addTabs: make text readable.
             addTabs = (t as text, optional tabsNumber as number) as text => Text.Replace ( t, "#(lf)", "#(lf)" & Text.Repeat("#(tab)", tabsNumber??1 ) ),
 
-            //typeFinder: finds the main type of a list
+            // typeFinder: finds the main type of a list
             typeFinder = (x as list, optional noNull as logical, optional crazyMode as logical) =>
-                    let
-                        startingList = if noNull??true then List.Select(x, each not Type.Is(_, type null)) else x,
-                        listMode = List.Mode(startingList),
-                        listDistinct = List.Distinct(startingList),
-                        countDistinct = List.Count(listDistinct)
-                    in
+                let
+                    startingList = if noNull??true then List.Select(x, each not Type.Is(_, type null)) else x,
+                    listMode = List.Mode(startingList),
+                    listDistinct = List.Distinct(startingList),
+                    countDistinct = List.Count(listDistinct)
+                in
+                if countDistinct = 0 then type any
+                else if countDistinct = 1 then listDistinct{0}
+                else
                     // Three extra steps here because type {number} != type {text}
                     if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type [...]))) then type [...]
                     else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type table))) then type table
@@ -27,14 +30,35 @@ let
                         in
                             if countNew = 2 and List.Contains(listDistinct, type text) then type text
                             else type any
-                    else if countDistinct > 1 then
+                    else
                         if List.Contains(listDistinct, type any)
                             then List.Select(listDistinct, each _ <> type any){0}
                         else if List.Contains(listDistinct, type text) then type text
-                        else type any
-                    else if countDistinct = 1 then listDistinct{0}
-                    else type any,
-                    
+                        else type any,
+
+            // replaceWithType: custom replacer
+            replaceWithType = (x,y,z) => let typ = Value.Type(x) in if Type.Is(typ, type number) then if (Number.Mod(x, 1)??0) = 0 then Int64.Type else type number else typ,
+
+
+            // Not allowed types
+            typeList = 
+                [
+                    Text =
+                        if primitive??false then { "binary", "function", "list", "record", "table", "type" }
+                        else { "Type.Binary", "Type.Function", "Type.List", "Type.Record", "Type.Table", "Type.Type" },
+                    Type = {type binary, type function, type list, type record, type table, type type, type [...]}
+                ],
+            excludeTypes = (t as any, textOrType as text) as logical =>
+                if textOrType = "Text" then List.AllTrue(List.Transform(Record.Field(typeList, textOrType), each t <> _))
+                else List.AllTrue(List.Transform(Record.Field(typeList, textOrType), each not Type.Is(t, _))),
+
+            // typeToText: format types to #"Name" = type
+            typeToText = 
+                if primitive??false then (x as list) as text => "#""" & x{0} &"""" & " = ( type " & x{1} & " )"
+                else (x as list) as text => "#""" & x{0} &"""" & " = " & x{1},
+
+            // Schema columns
+            schemaColumns = if primitive??false then {"Name", "Kind"} else {"Name", "TypeName"},
 
             // Calculations
             fixTableName = if Text.StartsWith(tableName, "#") then tableName else "#""" & tableName & """",
@@ -45,7 +69,7 @@ let
                     let
                         rowsToGet = List.Min({Table.RowCount(table), precision??50, 1000}),
 
-                        tableValuesToType = Table.ReplaceValue(Table.FirstN(table, rowsToGet), null, null, (x,y,z) => Value.Type(x), columnNames),
+                        tableValuesToType = Table.ReplaceValue(Table.FirstN(table, rowsToGet), null, null, replaceWithType, columnNames),
                         FindBestType = Table.CombineColumns(
                             Table.Transpose(tableValuesToType),
                             List.Transform({1..rowsToGet}, each "Column"&Text.From(_)),
@@ -55,13 +79,15 @@ let
 
                         RemoveExtra = List.Select(
                             List.Zip({columnNames, List.Transform(FindBestType[Types], each if Type.Is(_, type null) then type any else _)}),
-                            each _{1} <> type [...] and _{1} <> type record and _{1} <> type function and _{1} <> type binary and _{1} <> type table and _{1} <> type list and _{1} <> type type),
+                            each excludeTypes(_{1}, "Type")),
                         realFakeTables = Table.TransformColumnTypes(#table(List.Transform(RemoveExtra, each _{0}), {}), RemoveExtra),
-                        schema = Table.Schema(realFakeTables)[[Name], [Kind]]
+                        schema = Table.SelectColumns(Table.Schema(realFakeTables), schemaColumns)
                     in
                         schema
                 else
-                    Table.SelectRows(Table.Schema(table)[[Name], [Kind]], each [Kind] <> "record" and [Kind] <> "table" and [Kind] <> "function" and [Kind] <> "binary" and [Kind] <> "list" and [Kind] <> "type"),
+                    Table.SelectRows(
+                        Table.SelectColumns(Table.Schema(table), schemaColumns),
+                        each excludeTypes(Record.Field(_, schemaColumns{1}), "Text") ),
 
             columnsToRemove = List.RemoveItems(columnNames, findType[Name]),
             removeColumns = List.Count(columnsToRemove) > 0,
@@ -73,7 +99,7 @@ let
 
             tableType =
                 "type table [#(lf)#(tab)"
-                & Text.Combine(Table.ToList(findType, (x) => "#""" & x{0} &"""" & " = ( type " & x{1} & " )" ), ",#(lf)#(tab)")
+                & Text.Combine(Table.ToList(findType, typeToText ), ",#(lf)#(tab)")
                 & "#(lf)]",
             
             getType = "GetType = () =>#(lf)#(tab)" & addTabs(tableType),
@@ -118,13 +144,17 @@ let
             optional rowsToShow as (type number meta [
                 Documentation.FieldCaption = "rowsToShow",
                 Documentation.FieldDescription = "Show first n rows when asking for 1000"
+                ]),
+            optional primitive as (type logical meta [
+                Documentation.FieldCaption = "primitive",
+                Documentation.FieldDescription = "Only primitive types"
                 ])
         )
         as text meta
         [
             Documentation.Name = "Get.TableView",
             Documentation.Description = "Generates <code>Table.View</code> to trick model asking for evaluation",
-            Documentation.LongDescription = "Generates <code>Table.View</code> to trick model asking for evaluation. Optional <code>precision</code> and <code>rowsToShow</code>.<p> <b>Skipping:</b> <i>Lists, Tables, Records, Binaries, Functions and Types</i><p><i>Only primitive types supported.</i>",
+            Documentation.LongDescription = "Generates <code>Table.View</code> to trick model asking for evaluation. Optional <code>precision</code> and <code>rowsToShow</code>.<p> <b>Skipping:</b> <i>Lists, Tables, Records, Binaries, Functions and Types</i>",
             Documentation.Category = "Model",
             Documentation.Author = "Spyros Mavroforos",
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",

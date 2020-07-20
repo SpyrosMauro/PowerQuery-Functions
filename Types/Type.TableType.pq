@@ -1,22 +1,31 @@
 let
     // Function
-    TypeTableTypeFunction = (table as table, optional precision as number) as any =>
+    TypeTableTypeFunction = (table as table, optional precision as number, optional primitive as logical) as any =>
         let
-            columnNames = Table.ColumnNames(table),
+            // addTabs: make text readable.
+            addTabs = (t as text, optional tabsNumber as number) as text => Text.Replace ( t, "#(lf)", "#(lf)" & Text.Repeat("#(tab)", tabsNumber??1 ) ),
 
-            //typeFinder: finds the main type of a list
+            // typeToText: format types
+            typeToText = 
+                if primitive??false then (x as list) as text => if Text.StartsWith(x{1}, "type table [") then "#""" & x{0} &"""" & " = ( " & x{1} & " )" else "#""" & x{0} &"""" & " = ( type " & x{1} & " )"
+                else (x as list) as text => "#""" & x{0} &"""" & " = " & x{1},
+
+            // typeFinder: finds the main type of a list
             typeFinder = (x as list, optional noNull as logical, optional crazyMode as logical) =>
-                    let
-                        startingList = if noNull??true then List.Select(x, each not Type.Is(_, type null)) else x,
-                        listMode = List.Mode(startingList),
-                        listDistinct = List.Distinct(startingList),
-                        countDistinct = List.Count(listDistinct)
-                    in
+                let
+                    startingList = if noNull??true then List.Select(x, each not Type.Is(_, type null)) else x,
+                    listMode = List.Mode(startingList),
+                    listDistinct = List.Distinct(startingList),
+                    countDistinct = List.Count(listDistinct)
+                in
+                if countDistinct = 0 then type any
+                else if countDistinct = 1 then listDistinct{0}
+                else
                     // Three extra steps here because type {number} != type {text}
-                    if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type [...]))) then type [...]
-                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type table))) then type table
-                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type list))) then type list
-                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type function))) then type function
+                    if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type [...]))) then type nullable [...]
+                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type table))) then type nullable table
+                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type list))) then type nullable list
+                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type function))) then type nullable function
                     else if crazyMode??false then listMode
                     else if countDistinct > 3 then type any
                     else if countDistinct > 2 then 
@@ -26,20 +35,60 @@ let
                         in
                             if countNew = 2 and List.Contains(listDistinct, type text) then type text
                             else type any
-                    else if countDistinct > 1 then
+                    else
                         if List.Contains(listDistinct, type any)
                             then List.Select(listDistinct, each _ <> type any){0}
                         else if List.Contains(listDistinct, type text) then type text
-                        else type any
-                    else if countDistinct = 1 then listDistinct{0}
-                    else type any,
+                        else type any,
+
+
+            // Not allowed types
+            typeList = 
+                [
+                    Text =
+                        if primitive??false then { "null", "function", "list", "record", "table", "type" }
+                        else { "Type.Null", "Type.Function", "Type.List", "Type.Record", "Type.Table", "Type.Type" },
+                    Type = { type null, type function, type list, type record, type table, type type }
+                ],
+            excludeTypes = (t as any, textOrType as text) as logical =>
+                if textOrType = "text" then List.AllTrue(List.Transform(Record.Field(typeList, textOrType), each t <> _))
+                else List.AllTrue(List.Transform(Record.Field(typeList, textOrType), each not Type.Is(t, _))),
+
+            // fakeFunction: takes a type and makes a function that returns this type, to be used for non appliable types
+            // when Table.TransformColumnTypes is able to ascribe these 6 types then it will be redundant
+            fakeFunction = (Type as type) as function =>
+                if Type.Is(Type, type null) then (x) as null => null
+                else if Type.Is(Type, type function) then (x) as nullable function => x
+                else if Type.Is(Type, type list) then (x) as nullable list => x
+                else if Type.Is(Type, type record) then (x) as nullable record => x
+                else if Type.Is(Type, type table) then (x) as nullable table => x
+                else if Type.Is(Type, type type) then (x) as nullable type => x
+                else (x) => x,
+
+            // replaceWithType: custom replacer
+            replaceWithType =
+                if primitive??false then (x,y,z) => Value.Type(x)
+                else (x,y,z) => let typ = Value.Type(x) in if Type.Is(typ, type number) then if (Number.Mod(x, 1)??0) = 0 then Int64.Type else type number else typ,
+
+            tableTypeFromSchema = (schema as table) as text =>
+                "type table [#(lf)#(tab)"
+                & Text.Combine( Table.ToList( schema, (t) => addTabs(typeToText(t)) ), ",#(lf)#(tab)" )
+                & "#(lf)]",
+
+
+            // Schema columns
+            schemaColumns = if primitive??false then {"Name", "Kind"} else {"Name", "TypeName"},
+
                     
             findType =
                 if (precision??0) > 0 then
                     let
                         rowsToGet = List.Min({Table.RowCount(table), precision??50, 1000}),
+                        firstN = Table.FirstN(table, rowsToGet),
+                        columnNames = Table.ColumnNames(firstN),
 
-                        tableValuesToType = Table.ReplaceValue(Table.FirstN(table, rowsToGet), null, null, (x,y,z) => Value.Type(x), columnNames),
+
+                        tableValuesToType = Table.ReplaceValue(firstN, null, null, replaceWithType, columnNames),
                         FindBestType = Table.CombineColumns(
                             Table.Transpose(tableValuesToType),
                             List.Transform({1..rowsToGet}, each "Column"&Text.From(_)),
@@ -47,18 +96,29 @@ let
                             "Types"
                             ),
                         
-                        Zip = List.Zip({columnNames, List.Transform(FindBestType[Types], each if Type.Is(_, type null) then type any else _)}),
-                        realFakeTables = Table.TransformColumnTypes(#table(List.Transform(Zip, each _{0}), {}), Zip),
-                        schema = Table.Schema(realFakeTables)[[Name], [Kind]]
-                    in
-                        schema
-                else
-                    Table.Schema(table)[[Name], [Kind]],
+                        allTransformations = List.Zip({columnNames, List.Transform(FindBestType[Types], each if Type.Is(_, type null) then type any else _)}),
+                        applicableTransformations = List.Select( allTransformations, each excludeTypes(_{1}, "Type")),
+                        fakeTable = #table(List.Transform(allTransformations, each _{0}), {}),
+                        applySimpleTransformations = if applicableTransformations <> {} then Table.TransformColumnTypes(fakeTable, applicableTransformations) else fakeTable,
 
-            tableType =
-                "type table [#(lf)#(tab)"
-                & Text.Combine(Table.ToList(findType, (x) => "#""" & x{0} &"""" & " = ( type " & x{1} & " )" ), ",#(lf)#(tab)")
-                & "#(lf)]"
+                        notAllowedList = List.Transform(List.RemoveItems(allTransformations, applicableTransformations), each {_{0}, fakeFunction(_{1}), _{1}}),
+                        checkExtraTypes = if notAllowedList <> {} then Table.TransformColumns(applySimpleTransformations, notAllowedList) else applySimpleTransformations,
+                        schema = Table.SelectColumns(Table.Schema(checkExtraTypes), schemaColumns),
+                        result =
+                            if primitive??false
+                                then Table.RemoveColumns(Table.AddColumn(schema, "Deep Dive",
+                                    each if [Kind] = "table" then
+                                        let name = [Name] in
+                                        tableTypeFromSchema(Table.SelectColumns(Type.TableSchema(List.Select(notAllowedList, each _{0} = name){0}{2}), schemaColumns))
+                                    else [Kind], type text)
+                                    ,{"Kind"})
+                                else schema
+                    in
+                        result
+                else
+                    Table.SelectColumns(Table.Schema(table), schemaColumns),
+
+            tableType = tableTypeFromSchema(findType)
         in
             tableType,
 
@@ -73,13 +133,17 @@ let
             optional precision as (type number meta [
                 Documentation.FieldCaption = "precision",
                 Documentation.FieldDescription = "First <code>n</code> rows to check for best type match"
+                ]),
+            optional primitive as (type logical meta [
+                Documentation.FieldCaption = "primitive",
+                Documentation.FieldDescription = "Only primitive types"
                 ])
         )
         as text meta
         [
             Documentation.Name = "Type.TableType",
             Documentation.Description = "Generates the text of non abstract table type",
-            Documentation.LongDescription = "Generates <b>text of</b> <code>non abstract type table</code>. Optional <code>precision</code>.<p> <i>Only primitive types supported.</i>",
+            Documentation.LongDescription = "Generates <b>text of</b> <code>non abstract type table</code>. Optional <code>precision</code>.",
             Documentation.Category = "Type",
             Documentation.Author = "Spyros Mavroforos",
             Documentation.Source = "https://github.com/SpyrosMauro/powerquery",
@@ -88,18 +152,20 @@ let
                 Description = "Table type to text",
                 Code = "let
     StartTable = Table.FromRecords({
-        [start = #datetime(2020,7,1,0,0,0), diff = #duration(0,15,0,0), list = {1}],
-        [start = #datetime(2020,7,1,5,0,0), diff = #duration(0,16,0,0), list = null],
-        [start = #datetime(2020,7,1,8,0,0), diff = #duration(1,0,0,0), list = {4}],
-        [start = #datetime(2020,7,1,16,0,0), diff = #duration(0,8,0,0), list = {3,4}]
+        [start = #datetime(2020,7,1,0,0,0), tb = #table(type table [a = number], {{1}}), list = {1}],
+        [start = #datetime(2020,7,1,5,0,0), tb = #table(type table [a = number], {{2}}), list = null],
+        [start = #datetime(2020,7,1,8,0,0), tb = #table(type table [a = number], {{3}}), list = {4}],
+        [start = #datetime(2020,7,1,16,0,0), tb = null, list = {3,4}]
     })
 in
-    Type.TableType ( StartTable )",
-                Result = "type table [
+    Type.TableType ( StartTable, 10, true )",
+                Result = """type table [
 	#""start"" = ( type datetime ),
-	#""diff"" = ( type duration ),
+	#""diff"" = ( type table [
+    #(tab)#(tab)#""a"" = ( type any )
+    #(tab)] ),
 	#""list"" = ( type list )
-]"
+]"""
             ],[
                 Description = "Table type to text",
                 Code = "let
@@ -109,15 +175,15 @@ in
         )
 in
     Type.TableType ( StartTable )",
-                Result = "type table [
-	#""n"" = ( type number ),
-	#""fun"" = ( type function ),
-	#""rec"" = ( type record ),
-	#""tb"" = ( type table ),
-	#""l"" = ( type list ),
-	#""bin"" = ( type binary ),
-	#""typ"" = ( type type )
-]"
+                Result = """type table [
+	#""n"" = Int64.Type,
+	#""fun"" = Function.Type,
+	#""rec"" = Record.Type,
+	#""tb"" = Table.Type,
+	#""l"" = List.Type,
+	#""bin"" = Binary.Type,
+	#""typ"" = Type.Type
+]"""
             ]}
         ]
 
