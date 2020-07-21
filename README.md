@@ -1,6 +1,6 @@
 # powerquery
 A collection of functions written in Power Query (M)
-*Or "I paste stuff here sometimes"*
+
 
 
 ## What you'll find:
