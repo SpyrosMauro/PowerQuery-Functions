@@ -1,4 +1,4 @@
-# powerquery
+# PowerQuery Functions
 A collection of functions written in Power Query (M)
 
 
