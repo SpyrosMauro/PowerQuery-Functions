@@ -197,7 +197,7 @@ let
     })
 in
     Get.TableView ( StartTable , ""StartTable"", 4 )",
-                Result = "= Table.View (
+                Result = """= Table.View (
 	null,
 	[
 		GetType = () =>
@@ -218,7 +218,7 @@ in
 				)
 			else Table.FirstN ( Table.RemoveColumns ( #""StartTable"", { ""list"" } , MissingField.Ignore ), count )
 	]
-)"
+)"""
             ],[
                 Description = "Generate table view of last step",
                 Code = "let
@@ -230,7 +230,7 @@ in
     })
 in
     Get.TableView ( StartTable , ""StartTable"")",
-                Result = "= Table.View (
+                Result = """= Table.View (
 	null,
 	[
 		GetType = () =>
@@ -253,7 +253,7 @@ in
 				)
 			else Table.FirstN ( #""StartTable"", count )
 	]
-)"
+)"""
             ]}
         ]
 
