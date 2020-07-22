@@ -1,6 +1,6 @@
 let
     // Function
-    TableGenerateColumnsFunction = (table as table, columns as list, newName as function, forEach as function) =>
+    TableGenerateColumnsFunction = (table as table, columns as list, newName as function, forEach as function, optional newColumnType as type) =>
         let
             // Helper Functions
             // functionParameterCount
@@ -37,10 +37,16 @@ let
                         newNameList
                         ),
 
+            recordType =
+                if newColumnType = null then type record
+                else
+                    let listTypes = List.Transform({1..columnCount}, each [Type = newColumnType, Optional = false])
+                    in Type.ForRecord(Record.FromList(listTypes, newNameList), false),
+
 
             AddRecordColumn = Table.AddColumn(table, "__New Columns__",
                 recordGenerator,
-                type record
+                recordType
                 ),
 
             ExpandNewColumns = Table.ExpandRecordColumn(AddRecordColumn, "__New Columns__", newNameList, newNameList)
@@ -83,7 +89,11 @@ let
             forEach as ((type function( _ as any ) as any ) meta [
                 Documentation.FieldCaption = "New column function",
                 Documentation.FieldDescription = "Column generator"
-            ])
+            ]),
+            optional newColumnType as ((type type) meta [
+                Documentation.FieldCaption = "newColumnType",
+                Documentation.FieldDescription = "Type of new columns"
+                ])
         )
         as table meta
         [
