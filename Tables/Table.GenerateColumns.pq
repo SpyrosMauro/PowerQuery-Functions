@@ -2,17 +2,44 @@ let
     // Function
     TableGenerateColumnsFunction = (table as table, columns as list, newName as function, forEach as function) =>
         let
-            newNameList = Value.ReplaceType(List.Transform(columns, newName), type {text}),
+            // Helper Functions
+            // functionParameterCount
+            functionparameterCount = (f as function) as number => Record.FieldCount(Type.FunctionParameters(Value.Type(f))),
+
+            nameGeneratorParameterCount = functionparameterCount(newName),
+            forEachParameterCount = functionparameterCount(forEach),
+            columnCount = List.Count(columns),
+
+
+            newNameList =
+                let newList = if nameGeneratorParameterCount = 2
+                    then List.Transform(List.Zip({columns, {1..columnCount}}), each newName(_{0}, _{1}))
+                    else List.Transform(columns, newName)
+                in Value.ReplaceType(newList, type {text}),
+
+            recordGenerator =
+                if forEachParameterCount = 2 then
+                    (rec) =>
+                    Record.FromList(
+                        List.Transform(List.Zip({columns, {1..columnCount}}), (c) => Function.Invoke(forEach, {
+                            Record.Combine({rec,
+                                [_ = [Value = Record.Field(rec, c{0}),
+                                Name = c{0}]]}),
+                                c{1}})),
+                        newNameList
+                        )
+                else (rec) =>
+                    Record.FromList(
+                        List.Transform(columns, (c) => Function.Invoke(forEach, {
+                            Record.Combine({rec,
+                                [_ = [Value = Record.Field(rec, c),
+                                Name = c]]})})),
+                        newNameList
+                        ),
+
 
             AddRecordColumn = Table.AddColumn(table, "__New Columns__",
-                (rec) =>
-                Record.FromList(
-                    List.Transform(columns, (c) => Function.Invoke(forEach, {
-                        Record.Combine({rec,
-                            [_ = [Value = Record.Field(rec, c),
-                            Name = c]]})})),
-                    newNameList
-                    ),
+                recordGenerator,
                 type record
                 ),
 
@@ -82,6 +109,15 @@ in
     [id = 1, DateCreated = #date(2020,6,30), DateResolved = #date(2020, 6, 30), #""Start of Month DateCreated"" = #date(2020,6,1), #""Start of Month DateResolved"" = #date(2020, 6, 1)],
     [id = 1, DateCreated = #date(2020,5,25), DateResolved = #date(2020, 6, 12), #""Start of Month DateCreated"" = #date(2020,5,1), #""Start of Month DateResolved"" = #date(2020, 6, 1)],
     [id = 1, DateCreated = #date(2020,2,1), DateResolved = #date(2020, 7, 3), #""Start of Month DateCreated"" = #date(2020,2,1), #""Start of Month DateResolved"" = #date(2020, 7, 1)]
+})"
+            ],[
+                Description = "Generate columns based on same Column",
+                Code = "let
+    StartingTable = #table({""a""}, {{10}})
+in
+    Table.GenerateColumns ( StartingTable, {""a"", ""a"", ""a""}, (t, k) => t & ""*"" & Text.From(k*10), (rec, k) => rec[_][Value] * k * 10 )",
+                Result = "Table.FromRecords({
+    [a = 10, #""a*10"" = 100, #""a*20"" = 200, #""a*30"" = 300]
 })"
             ]}
         ]
