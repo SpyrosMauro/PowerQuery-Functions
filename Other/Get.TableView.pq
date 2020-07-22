@@ -37,6 +37,8 @@ let
                     else type any
                 else  type any,
 
+            // checkInt
+            checkInt = (x as number) as type => if (Number.Mod(x, 1)??0) = 0 then Int64.Type else type number,
             // replaceWithType: custom replacer
             replaceWithType = (x,y,z) =>
                 let
