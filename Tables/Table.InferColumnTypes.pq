@@ -77,8 +77,9 @@ let
 
 
             // Get types
-            rowsToGet = List.Min({Table.RowCount(table), precision??500, 1000}),
-            firstN = Table.FirstN((if columns = null then table else Table.SelectColumns(table, columns)), rowsToGet),
+            bufferTable = Table.Buffer(table),
+            rowsToGet = List.Min({Table.RowCount(bufferTable), precision??500, 1000}),
+            firstN = Table.FirstN((if columns = null then bufferTable else Table.SelectColumns(bufferTable, columns)), rowsToGet),
             columnNames = columns??Table.ColumnNames(firstN),
 
             tableValuesToType = Table.ReplaceValue(firstN, null, null, replaceWithType, columnNames),
@@ -93,7 +94,7 @@ let
             allTransformations = List.Zip({columnNames, FindBestType[Types]}),
             applicableTransformations = List.Select(allTransformations,
                 each excludeTypes( _{1} )),
-            applySimpleTransformations = if applicableTransformations <> {} then Table.TransformColumnTypes(table, applicableTransformations) else table,
+            applySimpleTransformations = if applicableTransformations <> {} then Table.TransformColumnTypes(bufferTable, applicableTransformations) else bufferTable,
             
             applyAllList = List.Transform(List.RemoveItems(allTransformations, applicableTransformations), each {_{0}, fakeFunction(_{1}), _{1}}),
             applyOthers = if applyAllList <> {} then Table.TransformColumns(applySimpleTransformations, applyAllList) else applySimpleTransformations,
