@@ -34,7 +34,7 @@ let
                     else if List.ContainsAll(listDistinct, {type date, type datetime}) then type datetime
                     else if List.ContainsAll(listDistinct, {type date, type datetimezone}) then type datetimezone
                     else if List.ContainsAll(listDistinct, {type datetime, type datetimezone}) then type datetimezone
-                    else if removeInts{0} = type duration then type duration
+                    else if removeInts{0}? = type duration then type duration
                     else type any
                 else if countDistinct = 3 then
                     if List.ContainsAll(listDistinct, {type datetimezone, type datetime, type date}) then type datetimezone
