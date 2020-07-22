@@ -4,38 +4,58 @@ let
         let
             // Helper Functions
             // typeFinder: finds the main type of a list
-            typeFinder = (x as list, optional noNull as logical, optional crazyMode as logical) =>
+            typeFinder = (x as list, optional crazyMode as logical) =>
                 let
-                    startingList = if noNull??true then List.Select(x, each not Type.Is(_, type null)) else x,
+                    startingList = List.Select(x, each _ <> type any),
                     listMode = List.Mode(startingList),
                     listDistinct = List.Distinct(startingList),
-                    countDistinct = List.Count(listDistinct)
+                    countDistinct = List.Count(listDistinct),
+                    removeInts = List.RemoveItems(listDistinct, {Int64.Type, Int32.Type, Int8.Type})
                 in
                 if countDistinct = 0 then type any
                 else if countDistinct = 1 then listDistinct{0}
-                else
-                    // Three extra steps here because type {number} != type {text}
-                    if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type [...]))) then type nullable [...]
-                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type table))) then type nullable table
-                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type list))) then type nullable list
-                    else if List.AnyTrue(List.Transform(listDistinct, each Type.Is(_, type function))) then type nullable function
-                    else if crazyMode??false then listMode
-                    else if countDistinct > 3 then type any
-                    else if countDistinct > 2 then 
-                        let
-                            newList = List.Select(listDistinct, each _ <> type any),
-                            countNew = List.Count(newList)
-                        in
-                            if countNew = 2 and List.Contains(listDistinct, type text) then type text
-                            else type any
-                    else
-                        if List.Contains(listDistinct, type any)
-                            then List.Select(listDistinct, each _ <> type any){0}
-                        else if List.Contains(listDistinct, type text) then type text
-                        else type any,
+                // Five extra steps here for abstract types
+                else if List.AllTrue(List.Transform(listDistinct, each Type.Is(_, type number))) then type number
+                else if List.AllTrue(List.Transform(listDistinct, each Type.Is(_, type [...]))) then type nullable [...]
+                else if List.AllTrue(List.Transform(listDistinct, each Type.Is(_, type table))) then type nullable table
+                else if List.AllTrue(List.Transform(listDistinct, each Type.Is(_, type list))) then type nullable list
+                else if List.AllTrue(List.Transform(listDistinct, each Type.Is(_, type function))) then type nullable function
+                /* // crazyMode is just for testing. Really, it just tries to assign the type found the most in the list. Don't use that.
+                else if crazyMode??false then listMode */
+                else if countDistinct = 2 then
+                    if List.Contains(listDistinct, type text) then type text
+                    else if List.ContainsAll(listDistinct, {type date, type datetime}) then type datetime
+                    else if List.ContainsAll(listDistinct, {type date, type datetimezone}) then type datetimezone
+                    else if List.ContainsAll(listDistinct, {type datetime, type datetimezone}) then type datetimezone
+                    else if removeInts{0} = type duration then type duration
+                    else type any
+                else if countDistinct = 3 then
+                    if List.ContainsAll(listDistinct, {type datetimezone, type datetime, type date}) then type datetimezone
+                    else if removeInts = {} then Int64.Type
+                    else type any
+                else  type any,
 
+            // checkInt
+            checkInt = (x as number) as type => if (Number.Mod(x, 1)??0) = 0 then Int64.Type else type number,
             // replaceWithType: custom replacer
-            replaceWithType = (x,y,z) => let typ = Value.Type(x) in if Type.Is(typ, type number) then if (Number.Mod(x, 1)??0) = 0 then Int64.Type else type number else typ,
+            replaceWithType = (x,y,z) =>
+                let
+                    // nulls were a bother. Now Completely removed.
+                    typ = if (x??"") = "" then type any else Value.Type(x)
+                in
+                    if Type.Is(typ, type number) then checkInt(x)
+                    // next step is for excel and other sources which store time as '31/12/1899 hh:mm:ss'. Thankfully, pq also sees this as time if Time.From is used
+                    else if Type.Is(typ, type datetime) then if not (try Time.From(x))[HasError] then type time else type datetime
+                    else if Type.Is(typ, type text) then
+                        if not (try Logical.FromText(x))[HasError] then type logical
+                        else if not (try Number.FromText(x))[HasError] then checkInt(Number.From(x))
+                        else if not (try Time.FromText(x))[HasError] then type time
+                        else if not (try Date.FromText(x))[HasError] then type date
+                        else if not (try DateTime.FromText(x))[HasError] then type datetime
+                        else if not (try DateTimeZone.FromText(x))[HasError] then type datetimezone
+                        else if not (try Duration.FromText(x))[HasError] then type duration
+                        else type text
+                    else typ,
 
             // typeToText
             typeToText = (typ as type, optional prim as logical) => let schema = Type.TableSchema(type table [a = typ]){0} in if prim??false then schema[Kind] else schema[TypeName],
