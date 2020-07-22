@@ -76,7 +76,7 @@ let
                 in
                     if Type.Is(typ, type number) then checkInt(x)
                     // next step is for excel and other sources which store time as '31/12/1899 hh:mm:ss'. Thankfully, pq also sees this as time if Time.From is used
-                    else if Type.Is(typ, type datetime) then if Date.From(DateTime.From(x))=#date(1899,31,12) then type time else type datetime
+                    else if Type.Is(typ, type datetime) then if Date.From(DateTime.From(x))=#date(1899,12,31) then type time else type datetime
                     else if Type.Is(typ, type text) then
                         if not (try Logical.FromText(x))[HasError] then type logical
                         else if not (try Number.FromText(x))[HasError] then checkInt(Number.From(x))
