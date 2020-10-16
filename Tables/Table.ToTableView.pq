@@ -99,16 +99,16 @@ let
                 & ",#(lf)#(tab)#(tab)" & addTabs(onTake, 2) & "#(lf)#(tab)]" & "#(lf))",
 
             rec = 
-            if primitive??false then
+            Record.Combine({
                 [
                     Table.View = Table.View,
                     Table.FirstN = Table.FirstN,
                     Table.RemoveColumns = Table.RemoveColumns,
                     MissingField.Ignore = MissingField.Ignore,
                     #"" = table
-                ]
-            else    
-                Record.AddField(allTypes, "", table)
+                ],
+                allTypes
+            })
         in
            Expression.Evaluate(tableView, rec),
 
