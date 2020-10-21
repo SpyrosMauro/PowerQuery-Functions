@@ -1,6 +1,6 @@
 let
     // Function
-    TableCombineMultipleColumnsFunction = (table as table, optional skipStart as nullable number, optional skipEnd as nullable number, optional setSize as number, optional delimiter as nullable text, optional columnNameDelimiter as nullable text) as table =>
+    TableCombineMultipleColumnsFunction = (table as table, optional skipStart as nullable number, optional skipEnd as nullable number, optional setSize as number, optional combiner as function, optional delimiter as nullable text, optional columnNameDelimiter as nullable text) as table =>
         let
             // Define things
             Names = List.RemoveLastN(Table.ColumnNames(table), skipEnd??0),
@@ -8,6 +8,13 @@ let
             sep = delimiter??", ",
             afterN = skipStart??0,
             columnDelimiter = columnNameDelimiter??" & ",
+
+            // Define Helper Functions
+            TextCombiner = combiner??((x) => Text.Combine(x, sep)),
+
+            GetK = (k) => List.Accumulate(List.Range(Names, k, groupSize), {}, (s, c) =>  s & {c}),
+
+            ColumnNameGenarator = (l as list) as text => Text.AfterDelimiter(List.Accumulate(l, "", (s, c) => s & columnDelimiter & c), columnDelimiter),
 
             // Error Handling
             CheckValues = [
@@ -17,17 +24,7 @@ let
                     Message = "Please supply positive values for skipStart and skipEnd and a setSize >= 2",
                     Detail = [#"Skip Start" = skipStart, #"Skip End" = skipEnd, #"Set Size" = setSize]]
             ],
-
-            // Define Helper Functions
-            TextCombiner = (x) => 
-                let
-                    t = Text.AfterDelimiter( List.Accumulate(x, "", (s,c) => s & sep & (Text.From(c)??"" ) ), sep )
-                in
-                    if t = sep then null else t,
-                
-            GetK = (k) => List.Accumulate(List.Range(Names, k, groupSize), {}, (s, c) =>  s & {c}),
-
-            ColumnNameGenarator = (l as list) as text => Text.AfterDelimiter(List.Accumulate(l, "", (s, c) => s & columnDelimiter & c), columnDelimiter),
+            
 
             // Generate a list of the columns to be combined
             CombineList = List.Generate( () => [N = GetK(afterN), k = groupSize+afterN], each [k]-groupSize<List.Count(Names), each [N = GetK([k]), k = [k] + groupSize], each [N]),
@@ -58,6 +55,10 @@ let
             optional setSize as (type nullable number meta [
                 Documentation.FieldCaption ="Group size",
                 Documentation.FieldDescription = "Number of columns combine together"
+                ]),
+            optional combiner as (type function meta [
+                Documentation.FieldCaption ="Combiner Function",
+                Documentation.FieldDescription = "Optional Combiner"
                 ]),
             optional delimiter as (type nullable text meta [
                 Documentation.FieldCaption ="Delimiter",
@@ -94,6 +95,24 @@ in
     [#""a & b"" = 2, 2],
     [#""a & b"" = 3, 4],
     [#""a & b"" = 4, 5]
+})"
+            ],[
+                Description = "Combine all columns by 2, adding them",
+                Code = "let
+    StartingTable =
+        Table.FromRecords({
+            [a = 1, b = 2],
+            [a = 2, b = 2],
+            [a = 3, b = 4],
+            [a = 4, b = 5]
+        })
+in
+    Table.CombineMultipleColumns( StartingTable, null, null, null, List.Sum )",
+            Result = "Table.FromRecords({
+    [#""a & b"" = 3],
+    [#""a & b"" = 4],
+    [#""a & b"" = 7],
+    [#""a & b"" = 9]
 })"
             ],[
                 Description = "Combine all columns by 2, skipping first 2",
