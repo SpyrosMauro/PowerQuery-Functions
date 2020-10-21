@@ -10,7 +10,7 @@ let
             columnDelimiter = columnNameDelimiter??" & ",
 
             // Define Helper Functions
-            TextCombiner = combiner??((x) => Text.Combine(x, sep)),
+            TextCombiner = combiner??((x) => Text.Combine(List.Transform(x, Text.From), sep)),
 
             GetK = (k) => List.Accumulate(List.Range(Names, k, groupSize), {}, (s, c) =>  s & {c}),
 
