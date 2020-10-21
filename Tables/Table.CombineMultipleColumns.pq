@@ -9,8 +9,13 @@ let
             afterN = skipStart??0,
             columnDelimiter = columnNameDelimiter??" & ",
 
+            
             // Define Helper Functions
-            TextCombiner = combiner??((x) => Text.Combine(List.Transform(x, Text.From), sep)),
+            TextCombiner = combiner??((x) => 
+                let
+                    t = Text.AfterDelimiter( List.Accumulate(x, "", (s,c) => s & sep & (Text.From(c)??"" ) ), sep )
+                in
+                    if t = sep then null else t),
 
             GetK = (k) => List.Accumulate(List.Range(Names, k, groupSize), {}, (s, c) =>  s & {c}),
 
