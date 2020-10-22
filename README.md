@@ -9,6 +9,7 @@ A collection of functions written in Power Query (M)
 | Function | Description |
 | :--- | ----------- |
 | [Table.CombineMultipleColumns](Tables/Table.CombineMultipleColumns.pq) | For double headers. Combine columns by any <code>setSize</code> in one step. |
+| [Table.DistinctMerge](Tables/Table.DistinctMerge.pq) | Combines two tables based on duplicate keys keeping only one item per row. |
 | [Table.GenerateColumns](Tables/Table.GenerateColumns.pq) | To add multiple columns based on similar functions.<p>*Have you thought about just unpivoting and adding one column afterwards?* |
 | [Table.InferColumnTypes](Tables/Table.InferColumnTypes.pq) | Infer column types.<p>Supply a <code>tableName</code> to get back code as text. |
 | [Table.ReplaceValuesFromTable](Tables/Table.ReplaceValuesFromTable.pq) | Optimised mass replace values in columns. |
